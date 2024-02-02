@@ -242,8 +242,8 @@ def draw_detections(frame, frame_processor, detections, output_transform):
 def main():
     args = build_argparser().parse_args()
     video_url = 'rtsp://admin:1234qwer@192.168.10.202:554/doc/page/preview.asp'
-    # cap = cv2.VideoCapture(video_url)
-    video_reader = imageio.get_reader(video_url)
+    cap = cv2.VideoCapture(video_url)
+    #video_reader = imageio.get_reader(video_url)
 
     # cap = open_images_capture(args.input, args.loop)
     frame_processor = FrameProcessor(args)
@@ -261,43 +261,43 @@ def main():
 
     while True:
         start_time = perf_counter()
-        for frame in video_reader:
-            # r, frame = cap.read()
-            if frame is None:
-                if frame_num == 0:
-                    raise ValueError("Can't read an image from the input")
+        # for frame in video_reader:
+        r, frame = cap.read()
+        if frame is None:
+            if frame_num == 0:
+                raise ValueError("Can't read an image from the input")
+            break
+
+        # if frame_num == 0:
+        #     output_transform = OutputTransform(frame.shape[:2], args.output_resolution)
+        #     if args.output_resolution:
+        #         output_resolution = output_transform.new_resolution
+        #     else:
+        #         output_resolution = (frame.shape[1], frame.shape[0])
+        #     presenter = monitors.Presenter(args.utilization_monitors, 55,
+        #                                    (round(output_resolution[0] / 4), round(output_resolution[1] / 8)))
+        #     if args.output and not video_writer.open(args.output, cv2.VideoWriter_fourcc(*'MJPG'),
+        #                                              cap.fps(), output_resolution):
+        #         raise RuntimeError("Can't open video writer")
+
+        detections = frame_processor.process(frame)
+
+        # frame = draw_detections(frame, frame_processor, detections, output_transform)
+
+        frame_num += 1
+
+
+        if not args.no_show:
+            cv2.imshow('Face recognition demo', frame)
+            key = cv2.waitKey(1)
+            # Quit
+            if key in {ord('q'), ord('Q'), 27}:
                 break
+    #         presenter.handleKey(key)
 
-            # if frame_num == 0:
-            #     output_transform = OutputTransform(frame.shape[:2], args.output_resolution)
-            #     if args.output_resolution:
-            #         output_resolution = output_transform.new_resolution
-            #     else:
-            #         output_resolution = (frame.shape[1], frame.shape[0])
-            #     presenter = monitors.Presenter(args.utilization_monitors, 55,
-            #                                    (round(output_resolution[0] / 4), round(output_resolution[1] / 8)))
-            #     if args.output and not video_writer.open(args.output, cv2.VideoWriter_fourcc(*'MJPG'),
-            #                                              cap.fps(), output_resolution):
-            #         raise RuntimeError("Can't open video writer")
-
-            detections = frame_processor.process(frame)
-
-            # frame = draw_detections(frame, frame_processor, detections, output_transform)
-
-            frame_num += 1
-
-
-            if not args.no_show:
-                cv2.imshow('Face recognition demo', frame)
-                key = cv2.waitKey(1)
-                # Quit
-                if key in {ord('q'), ord('Q'), 27}:
-                    break
-                presenter.handleKey(key)
-
-    metrics.log_total()
-    for rep in presenter.reportMeans():
-        log.info(rep)
+    # metrics.log_total()
+    # for rep in presenter.reportMeans():
+    #     log.info(rep)
 
 def extract_bounding_boxes(yolo_results, frame):
     rois = []
